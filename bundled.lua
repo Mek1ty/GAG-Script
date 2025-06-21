@@ -18,7 +18,7 @@ function AutoStart.WaitAndStart()
     while tick() - startTime < maxWaitTime do
         local loadedCandidate = playerGui.Intro_SCREEN.Frame.Loaded
 
-        if loadedCandidate and loadedCandidate:IsA("Value") then
+        if loadedCandidate then
             loadedValue = loadedCandidate
             break
         end
