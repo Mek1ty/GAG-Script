@@ -4,7 +4,7 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local AutoStart = {}
 
 function AutoStart.WaitAndStart()
-    local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui", 10)
+    local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui", 30)
     if not playerGui then
         warn("[AutoStart] PlayerGui не найден")
         return
@@ -21,7 +21,7 @@ function AutoStart.WaitAndStart()
             and playerGui.Intro_SCREEN.LoadScreen:FindFirstChild("Frame", true)
             and playerGui.Intro_SCREEN.LoadScreen.Frame:FindFirstChild("Loaded")
 
-        if loadedCandidate and loadedCandidate:IsA("NumberValue") then
+        if loadedCandidate and loadedCandidate:IsA("Value") then
             loadedValue = loadedCandidate
             break
         end
