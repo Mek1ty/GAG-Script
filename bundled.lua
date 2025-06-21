@@ -3,7 +3,7 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 
 local AutoStart = {}
 
-function AutoStart:WaitAndStart()
+function AutoStart.WaitAndStart()
     local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui", 10)
     if not playerGui then
         warn("[AutoStart] PlayerGui не найден")
@@ -52,4 +52,4 @@ return AutoStart
 end end
 local Starter = __DARKLUA_BUNDLE_MODULES.load('a')
 
-Starter.AutoStart()
+Starter.WaitAndStart()
