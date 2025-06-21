@@ -16,7 +16,7 @@ function AutoStart.WaitAndStart()
 
     
     while tick() - startTime < maxWaitTime do
-        local loadedCandidate = playerGui:WaitForChild("Intro_SCREEN", 10):WaitForChild("Frame", 10):WaitForChild("Loaded", 10)
+        local loadedCandidate = playerGui:WaitForChild("Intro_SCREEN"):WaitForChild("Frame"):WaitForChild("Loaded")
 
         if loadedCandidate then
             loadedValue = loadedCandidate
@@ -29,15 +29,11 @@ function AutoStart.WaitAndStart()
         warn("[AutoStart] Loaded объект не найден")
         return
     end
-
-    print("[AutoStart] Найден Loaded, отслеживаем значение...")
-
     
     while loadedValue.Value < 50 do
         task.wait(0.1)
     end
 
-    print("[AutoStart] Loaded > 50, эмуляция нажатия клавиши...")
 
     
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, nil)
