@@ -4,7 +4,7 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local AutoStart = {}
 
 function AutoStart.WaitAndStart()
-    local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui", 30)
+    local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui", 10)
     if not playerGui then
         warn("[AutoStart] PlayerGui не найден")
         return
@@ -16,9 +16,7 @@ function AutoStart.WaitAndStart()
 
     
     while tick() - startTime < maxWaitTime do
-        local loadedCandidate = playerGui:FindFirstChild("Intro_SCREEN", true)
-            and playerGui.Intro_SCREEN:FindFirstChild("Frame", true)
-            and playerGui.Intro_SCREEN.Frame:FindFirstChild("Loaded")
+        local loadedCandidate = playerGui.Intro_SCREEN.Frame.Loaded
 
         if loadedCandidate and loadedCandidate:IsA("Value") then
             loadedValue = loadedCandidate
