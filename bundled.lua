@@ -17,9 +17,8 @@ function AutoStart.WaitAndStart()
     
     while tick() - startTime < maxWaitTime do
         local loadedCandidate = playerGui:FindFirstChild("Intro_SCREEN", true)
-            and playerGui.Intro_SCREEN:FindFirstChild("LoadScreen", true)
-            and playerGui.Intro_SCREEN.LoadScreen:FindFirstChild("Frame", true)
-            and playerGui.Intro_SCREEN.LoadScreen.Frame:FindFirstChild("Loaded")
+            and playerGui.Intro_SCREEN:FindFirstChild("Frame", true)
+            and playerGui.Intro_SCREEN.Frame:FindFirstChild("Loaded")
 
         if loadedCandidate and loadedCandidate:IsA("Value") then
             loadedValue = loadedCandidate
