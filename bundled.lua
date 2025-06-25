@@ -9,10 +9,6 @@ local Start = {}
 local TARGET_PLACE_ID = 99703032952567 
 
 function Startup.WaitForGameLoad()
-	if not game:IsLoaded() then
-		game.Loaded:Wait()
-	end
-
 	while not LocalPlayer or not LocalPlayer.Character or not LocalPlayer:FindFirstChild("PlayerGui") do
 		task.wait()
 	end
