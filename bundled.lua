@@ -72,4 +72,4 @@ Start = __DARKLUA_BUNDLE_MODULES.load('a')
 UIUtils = __DARKLUA_BUNDLE_MODULES.load('b')
 
 Start.Run()
-uiUtils.StartNext()
+UIUtils.StartNext()
