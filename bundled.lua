@@ -36,7 +36,40 @@ function Start.Run(): boolean
 end
 
 return Start
+end function __DARKLUA_BUNDLE_MODULES.b()
+
+local UIUtils = {}
+
+local Save = require(game:GetService("ReplicatedStorage").Library.Directory.TowerDefenseMaps).Get()
+local WORLD_NAME = "Happy Castle"
+local MAX_LEVEL = 6
+
+function UIUtils.StartNext()
+	local completedLevels = Save and Save.TowerCompleted and Save.TowerCompleted[WORLD_NAME]
+
+	local maxCompleted = 0
+	if typeof(completedLevels) == "table" then
+		for level, completed in pairs(completedLevels) do
+			if completed == 1 and typeof(level) == "number" and level > maxCompleted then
+				maxCompleted = level
+			end
+		end
+	end
+
+	if maxCompleted < MAX_LEVEL then
+		local nextLevel = (maxCompleted > 0 and maxCompleted + 1) or 1
+		print("[UIUtils] Запуск уровня:", nextLevel)
+		
+	else
+		print("[UIUtils] Все уровни завершены. Запуск Infinity.")
+		
+	end
+end
+
+return UIUtils
 end end
 Start = __DARKLUA_BUNDLE_MODULES.load('a')
+UIUtils = __DARKLUA_BUNDLE_MODULES.load('b')
 
 Start.Run()
+uiUtils.StartNext()
