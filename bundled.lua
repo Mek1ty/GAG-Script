@@ -40,7 +40,7 @@ end function __DARKLUA_BUNDLE_MODULES.b()
 
 local UIUtils = {}
 
-local Save = require(game:GetService("ReplicatedStorage").Library.Directory.TowerDefenseMaps).Get()
+local Save = require(game:GetService("ReplicatedStorage").Library.Client.Save).Get()
 local WORLD_NAME = "Happy Castle"
 local MAX_LEVEL = 6
 
