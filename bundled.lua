@@ -8,25 +8,25 @@ local Start = {}
 
 local TARGET_PLACE_ID = 99703032952567 
 
-function Startup.WaitForGameLoad()
+function Start.WaitForGameLoad()
 	while not LocalPlayer or not LocalPlayer.Character or not LocalPlayer:FindFirstChild("PlayerGui") do
 		task.wait()
 	end
 end
 
-function Startup.IsInTargetPlace(): boolean
+function Start.IsInTargetPlace(): boolean
 	return game.PlaceId == TARGET_PLACE_ID
 end
 
-function Startup.TeleportToTargetPlace()
+function Start.TeleportToTargetPlace()
 	TeleportService:Teleport(TARGET_PLACE_ID, LocalPlayer)
 end
 
 
-function Startup.Run(): boolean
+function Start.Run(): boolean
 	Startup.WaitForGameLoad()
 
-	if not Startup.IsInTargetPlace() then
+	if not Start.IsInTargetPlace() then
 		warn("[Startup] Не в нужном плейсе. Телепортируемся...")
 		Startup.TeleportToTargetPlace()
 		return false 
@@ -35,7 +35,7 @@ function Startup.Run(): boolean
 	return true 
 end
 
-return Startup
+return Start
 end end
 Start = __DARKLUA_BUNDLE_MODULES.load('a')
 
