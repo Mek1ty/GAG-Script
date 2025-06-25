@@ -24,11 +24,11 @@ end
 
 
 function Start.Run(): boolean
-	Startup.WaitForGameLoad()
+	Start.WaitForGameLoad()
 
 	if not Start.IsInTargetPlace() then
 		warn("[Startup] Не в нужном плейсе. Телепортируемся...")
-		Startup.TeleportToTargetPlace()
+		Start.TeleportToTargetPlace()
 		return false 
 	end
 
