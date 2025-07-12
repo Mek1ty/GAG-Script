@@ -6,7 +6,8 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local Starter = {}
 
 function Starter:WaitForFullLoadAndClick()
-    local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui", 10)
+    print("123")
+    local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui", 20)
     local loaded
 
     
