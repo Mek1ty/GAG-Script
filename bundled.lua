@@ -50,8 +50,9 @@ function GiftSender:Start()
 
     print("[GiftSender] Старт. Отправка питомцев игрокам:", table.concat(recipientNames, ", "))
 
-    local function extractBaseName(name)
-        return string.match(name, "^(%w+)")
+    
+    local function extractCleanName(name)
+        return name:split(" [")[1]
     end
 
     local activeRecipients = {}
@@ -76,12 +77,11 @@ function GiftSender:Start()
 
         local petsToSend = {}
 
-        
         local function scanContainer(container)
             for _, tool in ipairs(container:GetChildren()) do
                 if tool:GetAttribute("ItemType") == "Pet" then
-                    local baseName = extractBaseName(tool.Name)
-                    if table.find(petNames, baseName) then
+                    local cleanName = extractCleanName(tool.Name)
+                    if table.find(petNames, cleanName) then
                         table.insert(petsToSend, tool)
                     end
                 end
@@ -113,15 +113,13 @@ function GiftSender:Start()
                 
                 local timeout = 5
                 local start = tick()
-                repeat
-                    task.wait()
-                until Character:FindFirstChild(petTool.Name) or tick() - start > timeout
-
+                repeat task.wait() until Character:FindFirstChild(petTool.Name) or tick() - start > timeout
                 PetGiftingService:FireServer("GivePet", recipient)
                 print("[GiftSender] ✅ Отправлен питомец:", petTool.Name, "→", recipient.Name)
+                repeat petTool.Parent = Backpack until petTool.Parent == Backpack or tick() - start > timeout
+                
             end)
 
-            task.wait(0.1)
         end
 
         recipientIndex += 1
