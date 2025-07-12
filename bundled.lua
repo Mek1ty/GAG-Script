@@ -41,8 +41,8 @@ local LocalPlayer = Players.LocalPlayer
 local Backpack = LocalPlayer:WaitForChild("Backpack")
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 
-
 local PetGiftingModule = require(ReplicatedStorage.Modules.PetServices.PetGiftingService)
+local NotificationEvent = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("Notification")
 
 local GiftSender = {}
 
@@ -72,6 +72,48 @@ function GiftSender:Start()
 
     local attempt = 0
     local recipientIndex = math.random(1, #activeRecipients)
+
+    local function sendPetWithConfirmation(petTool, recipient)
+        local sent = false
+        local toolError = false
+
+        local connection = NotificationEvent.OnClientEvent:Connect(function(msg)
+            if msg == "Sent gift request!" then
+                sent = true
+            elseif msg == "You are not holding a tool!" then
+                toolError = true
+            end
+        end)
+
+        local timeout = 5
+        local start = tick()
+
+        repeat
+            petTool.Parent = Character
+            task.wait(0.1)
+
+            if Character:FindFirstChild(petTool.Name) then
+                PetGiftingModule:GivePet(recipient)
+            end
+
+            local waitStart = tick()
+            repeat
+                task.wait()
+            until sent or toolError or tick() - waitStart > 1.5
+
+        until sent or tick() - start > timeout
+
+        connection:Disconnect()
+
+        if sent then
+            print("[GiftSender] ✅ Питомец отправлен:", petTool.Name, "→", recipient.Name)
+            petTool.Parent = Backpack
+            return true
+        else
+            warn("[GiftSender] ❌ Не удалось отправить питомца:", petTool.Name)
+            return false
+        end
+    end
 
     while true do
         attempt += 1
@@ -109,24 +151,7 @@ function GiftSender:Start()
 
         for _, petTool in ipairs(petsToSend) do
             pcall(function()
-                petTool.Parent = Character
-
-                
-                local start = tick()
-                local timeout = 5
-                repeat task.wait() until Character:FindFirstChild(petTool.Name) or tick() - start > timeout
-
-                if Character:FindFirstChild(petTool.Name) then
-                    PetGiftingModule:GivePet(recipient)
-                    print("[GiftSender] ✅ Отправлен питомец:", petTool.Name, "→", recipient.Name)
-
-                    
-                    local vanishStart = tick()
-                    petTool.Parent = Backpack 
-                    repeat task.wait() until not Character:FindFirstChild(petTool.Name) or tick() - vanishStart > timeout
-                else
-                    warn("[GiftSender] ⚠ Не удалось экипировать питомца:", petTool.Name)
-                end
+                sendPetWithConfirmation(petTool, recipient)
             end)
         end
 
