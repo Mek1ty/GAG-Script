@@ -16,7 +16,7 @@ function Starter:WaitForFullLoadAndClick()
         and playerGui.Intro_SCREEN.LoadScreen:FindFirstChild("Frame", true)
         and playerGui.Intro_SCREEN.LoadScreen.Frame:FindFirstChild("Loaded")
 
-        if loaded and loaded:IsA("NumberValue") and loaded.Value > 50 then
+        if loaded and loaded:IsA("NumberValue") and loaded.Value > 1500 then
             break
         end
 
