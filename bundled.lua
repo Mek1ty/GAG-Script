@@ -12,11 +12,10 @@ function Starter:WaitForFullLoadAndClick()
     
     while not loaded do
         loaded = playerGui:FindFirstChild("Intro_SCREEN", true)
-        and playerGui.Intro_SCREEN:FindFirstChild("LoadScreen", true)
         and playerGui.Intro_SCREEN.LoadScreen:FindFirstChild("Frame", true)
         and playerGui.Intro_SCREEN.LoadScreen.Frame:FindFirstChild("Loaded")
 
-        if loaded and loaded:IsA("NumberValue") and loaded.Value > 1500 then
+        if loaded and loaded:IsA("NumberValue") and loaded.Value > 200 then
             break
         end
 
@@ -33,6 +32,7 @@ function Starter:WaitForFullLoadAndClick()
 end
 
 return Starter
+
 end end
 
 
