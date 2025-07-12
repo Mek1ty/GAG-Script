@@ -113,10 +113,9 @@ function GiftSender:Start()
                 
                 local timeout = 5
                 local start = tick()
-                repeat task.wait() until Character:FindFirstChild(petTool.Name) or tick() - start > timeout
+                repeat petTool.Parent = Character until petTool.Parent == Character or tick() - start > timeout
                 PetGiftingService:FireServer("GivePet", recipient)
                 print("[GiftSender] ✅ Отправлен питомец:", petTool.Name, "→", recipient.Name)
-		print(123)
                 repeat petTool.Parent = Backpack until petTool.Parent == Backpack or tick() - start > timeout
                 
             end)
