@@ -117,12 +117,12 @@ function GiftSender:Start()
                 repeat task.wait() until Character:FindFirstChild(petTool.Name) or tick() - start > timeout
 
                 if Character:FindFirstChild(petTool.Name) then
-                    print(123)
                     PetGiftingModule:GivePet(recipient)
                     print("[GiftSender] ✅ Отправлен питомец:", petTool.Name, "→", recipient.Name)
 
                     
                     local vanishStart = tick()
+                    petTool.Parent = Backpack 
                     repeat task.wait() until not Character:FindFirstChild(petTool.Name) or tick() - vanishStart > timeout
                 else
                     warn("[GiftSender] ⚠ Не удалось экипировать питомца:", petTool.Name)
