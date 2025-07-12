@@ -40,7 +40,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 local Backpack = LocalPlayer:WaitForChild("Backpack")
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local PetGiftingService = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("PetGiftingService")
+
+
+local PetGiftingModule = require(ReplicatedStorage.Modules.PetServices.PetGiftingService)
 
 local GiftSender = {}
 
@@ -50,7 +52,6 @@ function GiftSender:Start()
 
     print("[GiftSender] Старт. Отправка питомцев игрокам:", table.concat(recipientNames, ", "))
 
-    
     local function extractCleanName(name)
         return name:split(" [")[1]
     end
@@ -111,15 +112,22 @@ function GiftSender:Start()
                 petTool.Parent = Character
 
                 
-                local timeout = 5
                 local start = tick()
-                repeat petTool.Parent = Character until petTool.Parent == Character or tick() - start > timeout
-                PetGiftingService:FireServer("GivePet", recipient)
-                print("[GiftSender] ✅ Отправлен питомец:", petTool.Name, "→", recipient.Name)
-                repeat petTool.Parent = Backpack until petTool.Parent == Backpack or tick() - start > timeout
-                
-            end)
+                local timeout = 5
+                repeat task.wait() until Character:FindFirstChild(petTool.Name) or tick() - start > timeout
 
+                if Character:FindFirstChild(petTool.Name) then
+                    print(123)
+                    PetGiftingModule:GivePet(recipient)
+                    print("[GiftSender] ✅ Отправлен питомец:", petTool.Name, "→", recipient.Name)
+
+                    
+                    local vanishStart = tick()
+                    repeat task.wait() until not Character:FindFirstChild(petTool.Name) or tick() - vanishStart > timeout
+                else
+                    warn("[GiftSender] ⚠ Не удалось экипировать питомца:", petTool.Name)
+                end
+            end)
         end
 
         recipientIndex += 1
