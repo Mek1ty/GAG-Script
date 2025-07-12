@@ -159,8 +159,7 @@ return GiftReceiver
 end end
 
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+
 
 
 local GameStarter = __DARKLUA_BUNDLE_MODULES.load('a')
@@ -169,6 +168,9 @@ local GiftReceiver = __DARKLUA_BUNDLE_MODULES.load('c')
 
 
 GameStarter:WaitForFullLoadAndClick()
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
 
 if table.find(_G.GiftRecipients, LocalPlayer.Name) then
