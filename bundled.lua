@@ -1,8 +1,9 @@
 local __DARKLUA_BUNDLE_MODULES __DARKLUA_BUNDLE_MODULES={cache={}, load=function(m)if not __DARKLUA_BUNDLE_MODULES.cache[m]then __DARKLUA_BUNDLE_MODULES.cache[m]={c=__DARKLUA_BUNDLE_MODULES[m]()}end return __DARKLUA_BUNDLE_MODULES.cache[m].c end}do function __DARKLUA_BUNDLE_MODULES.a()
-
+print("123")
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
-
+print(Players, "2")
+print(VirtualInputManager, "3")
 local Starter = {}
 
 function Starter:WaitForFullLoadAndClick()
