@@ -176,9 +176,37 @@ function GiftReceiver:Start()
 
     local giftEvent = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("GiftPet")
     local acceptEvent = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("AcceptPetGift")
+    local LocalPlayer = Players.LocalPlayer
+
+    local Backpack = LocalPlayer:WaitForChild("Backpack")
+    local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+
+    local function getPetCount()
+        local count = 0
+
+        for _, tool in ipairs(Backpack:GetChildren()) do
+            if tool:GetAttribute("ItemType") == "Pet" then
+                count += 1
+            end
+        end
+
+        for _, tool in ipairs(Character:GetChildren()) do
+            if tool:GetAttribute("ItemType") == "Pet" then
+                count += 1
+            end
+        end
+
+        return count
+    end
 
     giftEvent.OnClientEvent:Connect(function(petId, _, _)
         if typeof(petId) == "string" then
+            if getPetCount() >= 60 then
+                warn("[GiftReceiver] Too many pets in inventory.")
+                LocalPlayer:Kick("Inventory full (60 pets)")
+                return
+            end
+
             local args = { true, petId }
             pcall(function()
                 acceptEvent:FireServer(unpack(args))
@@ -190,9 +218,8 @@ function GiftReceiver:Start()
     end)
 end
 
-
-
-return GiftReceiver end end
+return GiftReceiver
+end end
 
 
 
