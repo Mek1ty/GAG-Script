@@ -71,7 +71,7 @@ function GiftSender:Start()
     end
 
     local attempt = 0
-    local recipientIndex = math.random(1, #activeRecipients)
+    local recipientIndex = 1
 
     local function sendPetWithConfirmation(petTool, recipient)
         local sent = false
