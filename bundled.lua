@@ -181,6 +181,7 @@ function GiftReceiver:Start()
     local Backpack = LocalPlayer:WaitForChild("Backpack")
     local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 
+    
     local function getPetCount()
         local count = 0
 
@@ -199,14 +200,21 @@ function GiftReceiver:Start()
         return count
     end
 
+    
+    task.spawn(function()
+        while true do
+            if getPetCount() >= 60 then
+                warn("[GiftReceiver] Too many pets. Kicking...")
+                LocalPlayer:Kick("Inventory full (60 pets)")
+                break
+            end
+            task.wait(30)
+        end
+    end)
+
+    
     giftEvent.OnClientEvent:Connect(function(petId, _, _)
         if typeof(petId) == "string" then
-            if getPetCount() >= 60 then
-                warn("[GiftReceiver] Too many pets in inventory.")
-                LocalPlayer:Kick("Inventory full (60 pets)")
-                return
-            end
-
             local args = { true, petId }
             pcall(function()
                 acceptEvent:FireServer(unpack(args))
