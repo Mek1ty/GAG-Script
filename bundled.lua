@@ -214,6 +214,7 @@ function GiftReceiver:Start()
 
     
     giftEvent.OnClientEvent:Connect(function(petId, _, _)
+        task.wait(0.5)
         if typeof(petId) == "string" then
             local args = { true, petId }
             pcall(function()
