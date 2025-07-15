@@ -233,7 +233,7 @@ function GiftReceiver:Start()
                 warn("[GiftReceiver] Invalid petId in queue.")
             end
 
-            task.wait(0.5) 
+            task.wait(1) 
         end
 
         isProcessing = false
