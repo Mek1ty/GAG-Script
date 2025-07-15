@@ -213,17 +213,36 @@ function GiftReceiver:Start()
     end)
 
     
-    giftEvent.OnClientEvent:Connect(function(petId, _, _)
-        task.wait(1)
-        if typeof(petId) == "string" then
-            local args = { true, petId }
-            pcall(function()
-                acceptEvent:FireServer(unpack(args))
-                print("[GiftReceiver] Gift received.")
-            end)
-        else
-            warn("[GiftReceiver] Wrong petId")
+    local giftQueue = {}
+    local isProcessing = false
+
+    local function processQueue()
+        if isProcessing then return end
+        isProcessing = true
+
+        while #giftQueue > 0 do
+            local petId = table.remove(giftQueue, 1)
+
+            if typeof(petId) == "string" then
+                local args = { true, petId }
+                pcall(function()
+                    acceptEvent:FireServer(unpack(args))
+                    print("[GiftReceiver] Gift received:", petId)
+                end)
+            else
+                warn("[GiftReceiver] Invalid petId in queue.")
+            end
+
+            task.wait(1) 
         end
+
+        isProcessing = false
+    end
+
+    
+    giftEvent.OnClientEvent:Connect(function(petId, _, _)
+        table.insert(giftQueue, petId)
+        processQueue()
     end)
 end
 
