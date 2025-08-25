@@ -48,12 +48,38 @@ local GiftSender = {}
 
 function GiftSender:Start()
     local petNames = _G.PetNamesToSend or {}
+    local sendForWeigth = _G.SendForWeigth or {} 
+    
+    if type(_G.SendForWeight) == "table" then
+        for n, w in pairs(_G.SendForWeight) do
+            if sendForWeigth[n] == nil then
+                sendForWeigth[n] = w
+            end
+        end
+    end
+
     local recipientNames = _G.GiftRecipients or {}
 
     print("[GiftSender] Старт. Отправка питомцев игрокам:", table.concat(recipientNames, ", "))
 
-    local function extractCleanName(name)
+    local function extractCleanName(name: string)
+        
         return name:split(" [")[1]
+    end
+
+    local function extractWeight(tool: Tool)
+        
+        local attr = tool:GetAttribute("Weight")
+        if typeof(attr) == "number" then
+            return attr
+        end
+        
+        local numStr = string.match(tool.Name, "%[(%d+%.?%d*)%]")
+        if numStr then
+            local n = tonumber(numStr)
+            if n then return n end
+        end
+        return 0
     end
 
     local activeRecipients = {}
@@ -73,7 +99,7 @@ function GiftSender:Start()
     local attempt = 0
     local recipientIndex = 1
 
-    local function sendPetWithConfirmation(petTool, recipient)
+    local function sendPetWithConfirmation(petTool: Tool, recipient: Player)
         local sent = false
         local toolError = false
 
@@ -115,6 +141,34 @@ function GiftSender:Start()
         end
     end
 
+    
+    local function shouldQueue(tool: Tool)
+        if tool:GetAttribute("ItemType") ~= "Pet" then
+            return false
+        end
+
+        local cleanName = extractCleanName(tool.Name)
+
+        
+        if table.find(petNames, cleanName) then
+            return true, cleanName, nil, extractWeight(tool)
+        end
+
+        
+        local minWeight = sendForWeigth[cleanName]
+        if typeof(minWeight) == "number" then
+            local w = extractWeight(tool)
+            if w >= minWeight then
+                return true, cleanName, minWeight, w
+            else
+                
+                
+            end
+        end
+
+        return false
+    end
+
     while true do
         attempt += 1
 
@@ -122,10 +176,15 @@ function GiftSender:Start()
 
         local function scanContainer(container)
             for _, tool in ipairs(container:GetChildren()) do
-                if tool:GetAttribute("ItemType") == "Pet" then
-                    local cleanName = extractCleanName(tool.Name)
-                    if table.find(petNames, cleanName) then
-                        table.insert(petsToSend, tool)
+                local ok, cleanName, minWeight, actualWeight = shouldQueue(tool)
+                if ok then
+                    table.insert(petsToSend, tool)
+                    if minWeight then
+                        print(("[GiftSender] В очередь: %s (имя: %s) — вес %s ≥ порога %s")
+                            :format(tool.Name, cleanName, tostring(actualWeight), tostring(minWeight)))
+                    else
+                        print(("[GiftSender] В очередь: %s (имя: %s) — по списку имён")
+                            :format(tool.Name, cleanName))
                     end
                 end
             end
@@ -135,7 +194,7 @@ function GiftSender:Start()
         scanContainer(Character)
 
         if #petsToSend == 0 then
-            print("[GiftSender] Все питомцы отправлены. Выход.")
+            print("[GiftSender] Все подходящие питомцы отправлены. Выход.")
             LocalPlayer:Kick("All pets sent.")
             return
         end
