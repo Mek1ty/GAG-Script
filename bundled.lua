@@ -49,7 +49,6 @@ local GiftSender = {}
 function GiftSender:Start()
     local petNames = _G.PetNamesToSend or {}
     local sendForWeigth = _G.SendForWeigth or {} 
-    
     if type(_G.SendForWeight) == "table" then
         for n, w in pairs(_G.SendForWeight) do
             if sendForWeigth[n] == nil then
@@ -58,22 +57,22 @@ function GiftSender:Start()
         end
     end
 
+    
+    local receiverPetMap = _G.ReceiverPetMap or {}
+
+    
     local recipientNames = _G.GiftRecipients or {}
 
-    print("[GiftSender] Старт. Отправка питомцев игрокам:", table.concat(recipientNames, ", "))
-
-    local function extractCleanName(name: string)
-        
+    
+    local function extractCleanName(name)
         return name:split(" [")[1]
     end
 
-    local function extractWeight(tool: Tool)
-        
+    local function extractWeight(tool)
         local attr = tool:GetAttribute("Weight")
         if typeof(attr) == "number" then
             return attr
         end
-        
         local numStr = string.match(tool.Name, "%[(%d+%.?%d*)%]")
         if numStr then
             local n = tonumber(numStr)
@@ -82,24 +81,107 @@ function GiftSender:Start()
         return 0
     end
 
+    local function toolPassesFilters(tool)
+        if tool:GetAttribute("ItemType") ~= "Pet" then
+            return false
+        end
+        local cleanName = extractCleanName(tool.Name)
+
+        
+        for i = 1, #petNames do
+            if petNames[i] == cleanName then
+                return true, cleanName, nil, extractWeight(tool)
+            end
+        end
+
+        
+        local minWeight = sendForWeigth[cleanName]
+        if typeof(minWeight) == "number" then
+            local w = extractWeight(tool)
+            if w >= minWeight then
+                return true, cleanName, minWeight, w
+            end
+        end
+
+        return false
+    end
+
+    
     local activeRecipients = {}
-    for _, name in ipairs(recipientNames) do
-        local player = Players:FindFirstChild(name)
-        if player and player ~= LocalPlayer then
-            table.insert(activeRecipients, player)
+    do
+        local wantFilterList = {}
+        for i = 1, #recipientNames do
+            wantFilterList[recipientNames[i] ] = true
+        end
+
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                local name = player.Name
+                local mappedPet = receiverPetMap[name]
+                local allowedByFilter = (next(wantFilterList) == nil) or (wantFilterList[name] == true)
+
+                if mappedPet and allowedByFilter then
+                    table.insert(activeRecipients, player)
+                end
+            end
         end
     end
 
     if #activeRecipients == 0 then
-        warn("[GiftSender] Получатели не найдены на сервере.")
-        LocalPlayer:Kick("Получатель не найден на сервере")
+        warn("[GiftSender] Получатели не найдены на сервере (или отсутствуют в ReceiverPetMap).")
+        LocalPlayer:Kick("No mapped recipients on server")
         return
     end
 
-    local attempt = 0
-    local recipientIndex = 1
+    print("[GiftSender] Start. Recipients:",
+        table.concat((function(list)
+            local t = {}
+            for i = 1, #list do t[#t + 1] = list[i].Name end
+            return t
+        end)(activeRecipients), ", ")
+    )
 
-    local function sendPetWithConfirmation(petTool: Tool, recipient: Player)
+    
+    local function collectPetBuckets()
+        local buckets = {}
+
+        local function put(tool)
+            local ok, cleanName, minW, w = toolPassesFilters(tool)
+            if not ok then return end
+
+            
+            local hasRecipient = false
+            for i = 1, #activeRecipients do
+                local r = activeRecipients[i]
+                if receiverPetMap[r.Name] == cleanName then
+                    hasRecipient = true
+                    break
+                end
+            end
+            if not hasRecipient then
+                return
+            end
+
+            local b = buckets[cleanName]
+            if b == nil then
+                b = {}
+                buckets[cleanName] = b
+            end
+            b[#b + 1] = tool
+        end
+
+        for _, tool in ipairs(Backpack:GetChildren()) do
+            put(tool)
+        end
+        for _, tool in ipairs(Character:GetChildren()) do
+            put(tool)
+        end
+
+        return buckets
+    end
+
+    local NotificationEvent = NotificationEvent 
+    local function sendPetWithConfirmation(petTool, recipient)
         local sent = false
         local toolError = false
 
@@ -113,7 +195,6 @@ function GiftSender:Start()
 
         local timeout = 5
         local start = tick()
-
         repeat
             petTool.Parent = Character
             task.wait(0.1)
@@ -125,103 +206,79 @@ function GiftSender:Start()
             local waitStart = tick()
             repeat
                 task.wait()
-            until sent or toolError or tick() - waitStart > 1.5
+            until sent or toolError or (tick() - waitStart > 1.5)
 
-        until sent or tick() - start > timeout
+        until sent or (tick() - start > timeout)
 
         connection:Disconnect()
 
         if sent then
-            print("[GiftSender] ✅ Питомец отправлен:", petTool.Name, "→", recipient.Name)
-            petTool.Parent = Backpack
+            print("[GiftSender] ✅", petTool.Name, "→", recipient.Name)
+            
+            if petTool.Parent ~= nil then
+                petTool.Parent = Backpack
+            end
             return true
         else
-            warn("[GiftSender] ❌ Не удалось отправить питомца:", petTool.Name)
+            warn("[GiftSender] ❌ Не удалось отправить:", petTool.Name)
             return false
         end
     end
 
     
-    local function shouldQueue(tool: Tool)
-        if tool:GetAttribute("ItemType") ~= "Pet" then
-            return false
-        end
+    local attempt = 0
+    while true do
+        attempt = attempt + 1
+        print(string.format("[GiftSender] Attempt #%d — scanning inventory", attempt))
 
-        local cleanName = extractCleanName(tool.Name)
-
-        
-        if table.find(petNames, cleanName) then
-            return true, cleanName, nil, extractWeight(tool)
-        end
+        local buckets = collectPetBuckets()
 
         
-        local minWeight = sendForWeigth[cleanName]
-        if typeof(minWeight) == "number" then
-            local w = extractWeight(tool)
-            if w >= minWeight then
-                return true, cleanName, minWeight, w
-            else
-                
-                
+        local any = false
+        for i = 1, #activeRecipients do
+            local r = activeRecipients[i]
+            local want = receiverPetMap[r.Name]
+            if buckets[want] and #buckets[want] > 0 then
+                any = true
+                break
             end
         end
 
-        return false
-    end
+        if not any then
+            print("[GiftSender] Все подходящие питомцы отправлены по маппингу. Выход.")
+            LocalPlayer:Kick("All mapped pets sent.")
+            return
+        end
 
-    while true do
-        attempt += 1
+        
+        for i = 1, #activeRecipients do
+            local r = activeRecipients[i]
+            local want = receiverPetMap[r.Name]
+            local pack = buckets[want]
 
-        local petsToSend = {}
+            if pack and #pack > 0 then
+                print(string.format("[GiftSender] → %s (expects: %s) — %d pet(s) queued",
+                    r.Name, want, #pack))
 
-        local function scanContainer(container)
-            for _, tool in ipairs(container:GetChildren()) do
-                local ok, cleanName, minWeight, actualWeight = shouldQueue(tool)
-                if ok then
-                    table.insert(petsToSend, tool)
-                    if minWeight then
-                        print(("[GiftSender] В очередь: %s (имя: %s) — вес %s ≥ порога %s")
-                            :format(tool.Name, cleanName, tostring(actualWeight), tostring(minWeight)))
-                    else
-                        print(("[GiftSender] В очередь: %s (имя: %s) — по списку имён")
-                            :format(tool.Name, cleanName))
+                
+                local toSend = pack
+                buckets[want] = {}
+
+                for j = 1, #toSend do
+                    local tool = toSend[j]
+                    if tool and tool.Parent ~= nil then
+                        pcall(function()
+                            sendPetWithConfirmation(tool, r)
+                        end)
                     end
                 end
             end
         end
 
-        scanContainer(Backpack)
-        scanContainer(Character)
-
-        if #petsToSend == 0 then
-            print("[GiftSender] Все подходящие питомцы отправлены. Выход.")
-            LocalPlayer:Kick("All pets sent.")
-            return
-        end
-
-        local recipient = activeRecipients[recipientIndex]
-        if not recipient then
-            warn("[GiftSender] Ошибка выбора получателя.")
-            LocalPlayer:Kick("Ошибка получения получателя")
-            return
-        end
-
-        print(string.format("[GiftSender] Попытка #%d. Отправка питомцев игроку %s", attempt, recipient.Name))
-
-        for _, petTool in ipairs(petsToSend) do
-            pcall(function()
-                sendPetWithConfirmation(petTool, recipient)
-            end)
-        end
-
-        recipientIndex += 1
-        if recipientIndex > #activeRecipients then
-            recipientIndex = 1
-        end
-
         task.wait(10)
     end
 end
+
 
 return GiftSender
 end function __DARKLUA_BUNDLE_MODULES.c()
