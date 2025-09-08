@@ -81,30 +81,47 @@ function GiftSender:Start()
         return 0
     end
 
+    -- Build a configured pet-name set once (union: PetNamesToSend ∪ SendForWeigth.keys ∪ ReceiverPetMap.values)
+    local configuredNameSet = {}
+    do
+        for i = 1, #petNames do
+            configuredNameSet[petNames[i]] = true
+        end
+        for n, _ in pairs(sendForWeigth) do
+            configuredNameSet[n] = true
+        end
+        for _, v in pairs(_G.ReceiverPetMap or {}) do
+            configuredNameSet[v] = true
+        end
+    end
+    
     local function toolPassesFilters(tool)
-        if tool:GetAttribute("ItemType") ~= "Pet" then
+        -- Be permissive: any Tool whose clean name is configured qualifies.
+        if not tool:IsA("Tool") then
             return false
         end
+    
         local cleanName = extractCleanName(tool.Name)
-
-        
-        for i = 1, #petNames do
-            if petNames[i] == cleanName then
-                return true, cleanName, nil, extractWeight(tool)
-            end
+    
+        -- Accept only configured pets (from our config/receiver map), ignore everything else.
+        if not configuredNameSet[cleanName] then
+            return false
         end
-
-        
+    
+        -- Optional weight gate
         local minWeight = sendForWeigth[cleanName]
         if typeof(minWeight) == "number" then
             local w = extractWeight(tool)
-            if w >= minWeight then
-                return true, cleanName, minWeight, w
+            if w < minWeight then
+                return false
             end
+            return true, cleanName, minWeight, w
         end
-
-        return false
+    
+        return true, cleanName, nil, extractWeight(tool)
     end
+
+
 
     
     local activeRecipients = {}
@@ -148,8 +165,8 @@ function GiftSender:Start()
         local function put(tool)
             local ok, cleanName, minW, w = toolPassesFilters(tool)
             if not ok then return end
-
-            
+        
+            -- keep the "has recipient" check, but it must not rely on ItemType anymore
             local hasRecipient = false
             for i = 1, #activeRecipients do
                 local r = activeRecipients[i]
@@ -161,7 +178,7 @@ function GiftSender:Start()
             if not hasRecipient then
                 return
             end
-
+        
             local b = buckets[cleanName]
             if b == nil then
                 b = {}
@@ -169,6 +186,7 @@ function GiftSender:Start()
             end
             b[#b + 1] = tool
         end
+
 
         for _, tool in ipairs(Backpack:GetChildren()) do
             put(tool)
@@ -243,6 +261,18 @@ function GiftSender:Start()
                 break
             end
         end
+
+        if not any then
+            -- diagnostics: show per-recipient expectation and current bucket sizes
+            for i = 1, #activeRecipients do
+                local r = activeRecipients[i]
+                local want = receiverPetMap[r.Name]
+                local pack = buckets[want]
+                print(string.format("[GiftSender][Diag] %s expects '%s' — available: %d",
+                    r.Name, tostring(want), pack and #pack or 0))
+            end
+        end
+
 
         if not any then
             print("[GiftSender] Все подходящие питомцы отправлены по маппингу. Выход.")
@@ -399,5 +429,6 @@ else
     print("[Main] Обнаружен как отправитель. Активируем GiftSender.")
     GiftSender:Start()
 end
+
 
 
