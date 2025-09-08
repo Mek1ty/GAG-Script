@@ -379,11 +379,25 @@ GameStarter:WaitForFullLoadAndClick()
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
-
-if table.find(_G.GiftRecipients, LocalPlayer.Name) then
-	print("[Main] Обнаружен как получатель. Активируем GiftReceiver.")
-	GiftReceiver:Start()
-else
-	print("[Main] Обнаружен как отправитель. Активируем GiftSender.")
-	GiftSender:Start()
+-- SAFE role detection: from explicit list OR from ReceiverPetMap
+local function isReceiver()
+    local recipients = _G.GiftRecipients
+    if type(recipients) == "table" and table.find(recipients, LocalPlayer.Name) then
+        return true
+    end
+    local map = _G.ReceiverPetMap
+    if type(map) == "table" and map[LocalPlayer.Name] ~= nil then
+        return true
+    end
+    return false
 end
+
+if isReceiver() then
+    print("[Main] Обнаружен как получатель. Активируем GiftReceiver.")
+    GiftReceiver:Start()
+else
+    print("[Main] Обнаружен как отправитель. Активируем GiftSender.")
+    GiftSender:Start()
+end
+
+
